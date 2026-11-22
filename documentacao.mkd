@@ -4,7 +4,7 @@ Esta seção documenta o raciocínio matemático utilizado para definir a funç�
 
 ### 1. Definição das Variáveis Iniciais
 
-* $a$: tamanho total do sarrafo 
+* $a$: tamanho total do sarrafo
 * $b_i$: tamanho utilizado (soma dos cortes) no sarrafo $i$
 * $a - b_i$: sobra restante no sarrafo $i$
 * $n$: número total de sarrafos utilizados
@@ -23,7 +23,9 @@ A **Solução 2** é superior porque concentra a maior parte da sobra em um úni
 
 ### 2. Soma Simples das Sobras — Equação (1)
 
-$$\sum_{i=0}^{n-1} (a - b_i) = \text{soma das sobras} \tag{1}$$
+$$
+\sum_{i=0}^{n-1} (a - b_i) = \text{soma das sobras}
+$$
 
 * **Limitação:** Para soluções com o mesmo número de sarrafos, a soma total das sobras é sempre igual. Assim, a Equação (1) não consegue diferenciar uma sobra bem concentrada de uma sobra fragmentada.
 
@@ -33,7 +35,9 @@ $$\sum_{i=0}^{n-1} (a - b_i) = \text{soma das sobras} \tag{1}$$
 
 Para premiar a concentração da sobra em um único sarrafo ao invés de distribuí-la entre vários, eleva-se cada sobra ao quadrado:
 
-$$\sum_{i=0}^{n-1} (a - b_i)^2 \tag{2}$$
+$$
+\sum_{i=0}^{n-1} (a - b_i)^2
+$$
 
 **Exemplo (soma total das sobras = 10):**
 
@@ -58,7 +62,9 @@ Quanto maior a concentração da sobra em um único sarrafo, maior é a saída d
 
 Para resolver o problema da quantidade de sarrafos, o resultado deve ser **inversamente proporcional** ao número de sarrafos utilizados ($n$):
 
-$$\sum_{i=0}^{n-1} \left(\frac{a - b_i}{n}\right)^2 \tag{3}$$
+$$
+\sum_{i=0}^{n-1} \left(\frac{a - b_i}{n}\right)^2
+$$
 
 ---
 
@@ -66,11 +72,15 @@ $$\sum_{i=0}^{n-1} \left(\frac{a - b_i}{n}\right)^2 \tag{3}$$
 
 Refinando a Equação (3) para avaliar diretamente a taxa de aproveitamento quadrático de cada sarrafo dividida pelo total de sarrafos $n$:
 
-$$F = \frac{1}{n} \sum_{i=0}^{n-1} \left(\frac{C_i}{\text{tam}_i}\right)^2 \tag{4}$$
+$$
+F = \frac{1}{n} \sum_{i=0}^{n-1} \left(\frac{C_i}{\text{tam}_i}\right)^2
+$$
 
 Onde $C_i$ representa a soma dos cortes feitos no sarrafo $i$. Expandindo o somatório dos cortes:
 
-$$F = \frac{1}{n} \sum_{i \in \text{sarrafos}} \left(\frac{\sum_{j \in \text{cortes}} C_j}{\text{tam}_i}\right)^2 \tag{5}$$
+$$
+F = \frac{1}{n} \sum_{i \in \text{sarrafos}} \left(\frac{\sum_{j \in \text{cortes}} C_j}{\text{tam}_i}\right)^2
+$$
 
 **Legenda:**
 
