@@ -1,0 +1,80 @@
+## Evolução da Função de Avaliação (Fitness)
+
+Esta seção documenta o raciocínio matemático utilizado para definir a função objetivo do algoritmo ACO aplicado ao problema de corte de estoque unidimensional (1D-CSP).
+
+### 1. Definição das Variáveis Iniciais
+
+* $a$: tamanho total do sarrafo 
+* $b_i$: tamanho utilizado (soma dos cortes) no sarrafo $i$
+* $a - b_i$: sobra restante no sarrafo $i$
+* $n$: número total de sarrafos utilizados
+
+Considere duas soluções com a mesma demanda e o mesmo número de sarrafos:
+
+| Solução 1 | Solução 2 |
+| :--- | :--- |
+| `[X \| X \| Y]` | `[X \| X \| Y]` |
+| `[X \| Y \| Y]` | `[X \| X \| Y]` |
+| `[X \|   \|  ]` | `[Y \|   \|  ]` |
+
+A **Solução 2** é superior porque concentra a maior parte da sobra em um único sarrafo (o último), facilitando o reaproveitamento do material.
+
+---
+
+### 2. Soma Simples das Sobras — Equação (1)
+
+$$\sum_{i=0}^{n-1} (a - b_i) = \text{soma das sobras} \tag{1}$$
+
+* **Limitação:** Para soluções com o mesmo número de sarrafos, a soma total das sobras é sempre igual. Assim, a Equação (1) não consegue diferenciar uma sobra bem concentrada de uma sobra fragmentada.
+
+---
+
+### 3. Concentração da Sobra (Soma dos Quadrados) — Equação (2)
+
+Para premiar a concentração da sobra em um único sarrafo ao invés de distribuí-la entre vários, eleva-se cada sobra ao quadrado:
+
+$$\sum_{i=0}^{n-1} (a - b_i)^2 \tag{2}$$
+
+**Exemplo (soma total das sobras = 10):**
+
+* **Sobra A:** `[0, 0, 0, 10]` $\rightarrow 0^2 + 0^2 + 0^2 + 10^2 = \mathbf{100}$
+* **Sobra B:** `[2, 4, 3, 1]` $\rightarrow 2^2 + 4^2 + 3^2 + 1^2 = \mathbf{30}$
+
+Quanto maior a concentração da sobra em um único sarrafo, maior é a saída da Equação (2).
+
+* **Limitação:** A Equação (2) funciona bem apenas para comparar soluções com o **mesmo número de sarrafos**. Se uma solução espalhar os mesmos cortes em mais sarrafos (aumentando $n$), ela gera mais espaço vazio total e pode obter uma pontuação maior de forma indevida:
+
+| Solução 1 (3 sarrafos) | Solução 2 (5+ sarrafos) |
+| :--- | :--- |
+| `[X \| X \| X]` | `[X \| X \| X]` |
+| `[X \| X \| Y]` | `[X \|   \|  ]` |
+| `[X \|   \|  ]` | `[X \|   \|  ]` |
+| | `[Y \|   \|  ]` |
+| | `[X \|   \|  ]` |
+
+---
+
+### 4. Penalização pelo Número de Sarrafos — Equação (3)
+
+Para resolver o problema da quantidade de sarrafos, o resultado deve ser **inversamente proporcional** ao número de sarrafos utilizados ($n$):
+
+$$\sum_{i=0}^{n-1} \left(\frac{a - b_i}{n}\right)^2 \tag{3}$$
+
+---
+
+### 5. Função de Avaliação Melhorada (Final) — Equações (4) e (5)
+
+Refinando a Equação (3) para avaliar diretamente a taxa de aproveitamento quadrático de cada sarrafo dividida pelo total de sarrafos $n$:
+
+$$F = \frac{1}{n} \sum_{i=0}^{n-1} \left(\frac{C_i}{\text{tam}_i}\right)^2 \tag{4}$$
+
+Onde $C_i$ representa a soma dos cortes feitos no sarrafo $i$. Expandindo o somatório dos cortes:
+
+$$F = \frac{1}{n} \sum_{i \in \text{sarrafos}} \left(\frac{\sum_{j \in \text{cortes}} C_j}{\text{tam}_i}\right)^2 \tag{5}$$
+
+**Legenda:**
+
+* $\text{tam}_i$: tamanho total do sarrafo $i$
+* $C_j$: tamanho do corte $j$ feito no sarrafo $i$
+* $C_i$: soma de todos os cortes realizados no sarrafo $i$
+* $n$: número total de sarrafos utilizados
