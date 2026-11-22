@@ -88,3 +88,57 @@ $$
 * $C_j$: tamanho do corte $j$ feito no sarrafo $i$
 * $C_i$: soma de todos os cortes realizados no sarrafo $i$
 * $n$: número total de sarrafos utilizados
+
+---
+
+## Atualização de Feromônios
+
+Esta seção documenta o modelo matemático utilizado para atualizar a matriz de feromônios ao final de cada iteração do algoritmo ACO (variante *Ant System* com depósito proporcional direto).
+
+### 1. Equação Geral
+
+Ao término de cada iteração $t$, após todas as formigas construírem suas soluções, a quantidade de feromônio $\tau_{ij}$ associada à transição do corte $i$ para o corte $j$ é atualizada em duas etapas — **evaporação** e **depósito**:
+
+$$
+\tau_{ij}(t+1) = (1 - \rho) \cdot \tau_{ij}(t) + \sum_{k=1}^{m} \Delta\tau_{ij}^{k}
+$$
+
+**Legenda:**
+
+* $\tau_{ij}(t)$: quantidade de feromônio na transição $(i \to j)$ na iteração atual
+* $\rho \in (0, 1)$: taxa de evaporação dos feromônios
+* $m$: número total de formigas na colônia
+* $\Delta\tau_{ij}^{k}$: quantidade de feromônio depositada pela formiga $k$ na transição $(i \to j)$
+
+---
+
+### 2. Etapa de Evaporação
+
+Antes de registrar os novos caminhos, todo o feromônio da matriz é reduzido proporcionalmente pelo fator $(1 - \rho)$:
+
+$$
+\tau_{ij} \leftarrow (1 - \rho) \cdot \tau_{ij}
+$$
+
+* **Objetivo:** Evitar a convergência prematura para ótimos locais, fazendo com que transições pouco utilizadas ou ruins percam relevância gradualmente ao longo das iterações.
+
+---
+
+### 3. Etapa de Depósito (Proporcional Direto)
+
+Como a função de avaliação de Falkenauer ($F_k$) é de **maximização** (quanto mais próxima de $1$, melhor o aproveitamento dos sarrafos), o depósito de cada formiga $k$ é diretamente proporcional à qualidade da sua solução:
+
+$$
+\Delta\tau_{ij}^{k} = \begin{cases} Q \cdot F_k & \text{se a formiga } k \text{ utilizou a transição } (i \to j) \\ 0 & \text{caso contrário} \end{cases}
+$$
+
+**Legenda:**
+
+* $Q$: constante positiva de escala que controla o peso do depósito
+* $F_k$: valor retornado pela função de avaliação (*fitness*) para a solução da formiga $k$
+
+---
+
+### 4. Regra de Transição no 1D-CSP
+
+No problema de corte de estoque unidimensional, apenas cortes realizados **em sequência dentro do mesmo sarrafo** constituem uma transição válida $(i \to j)$. Quando ocorre a quebra para um novo sarrafo (`DELIMITADOR_FIM_SARRAFO`), a transição é ignorada, garantindo que o feromônio reforce apenas combinações de cortes que realmente dividem o mesmo material.

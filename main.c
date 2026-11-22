@@ -3,10 +3,14 @@
 #include <string.h>
 #include <math.h>
 
+//Constante para deposito de feromonio: Q
+//rô "p" taxa de evaporação: p
 #define QNT_FORMIGAS 3
 #define DELIMITADOR_FIM_SARRAFO -1
 #define CORTE_NAO_CABE NULL
 #define SUCESSO 0
+#define Q 1
+#define p 0.1f
 
 typedef struct {
 	int quantidade;
@@ -19,7 +23,7 @@ prox: ponteiro para o próximo elemento da lista
 ant: ponteiro para o elemento anterior da lista
 dado: armazena o valor naquele no
 */
-typedef struct NoLista {
+typedef struct NoLista{
 	struct NoLista* prox;
 	struct NoLista* ant;
 	int dado;
@@ -150,9 +154,57 @@ void init_matriz_feromonios(float* feromonios, int qnt_cortes) {
 	}
 }
 
-void atualizar_feromonios(float* __restrict feromonios, float taxa_evaporacao, int qnt_cortes) {
-	for (int i = 0; i < qnt_cortes * qnt_cortes; ++i) feromonios[i] -= feromonios[i] * taxa_evaporacao;
+// void atualizar_feromonios(float* __restrict feromonios, float taxa_evaporacao, int qnt_cortes) {
+// 	for (int i = 0; i < qnt_cortes * qnt_cortes; ++i) feromonios[i] -= feromonios[i] * taxa_evaporacao;
+// }
+
+
+// Função auxiliar: converte o tamanho do corte para o índice dele no vetor 'cortes'
+int buscar_indice_corte(Corte* cortes, int qnt_cortes, int tamanho_corte) {
+    for (int i = 0; i < qnt_cortes; i++) {
+        if (cortes[i].tamanho == tamanho_corte) {
+            return i;
+        }
+    }
+    return -1;
 }
+
+// Atualização Depósito proporcional direto (Q * F_k)
+void atualizar_feromonios(float* feromonios, Formiga* formigas, Corte* cortes, int qnt_cortes, int tamanho_sarrafo) {
+    
+//evaporação (1 - rô) * tau_ij(t) em toda a matriz
+    int total_elementos = qnt_cortes * qnt_cortes;
+    for (int i = 0; i < total_elementos; i++) {
+        feromonios[i] *= (1.0f - p);
+    }
+
+	//deposito somatório de (Q * F_k) para cada formiga k
+    for (int k = 0; k < QNT_FORMIGAS; k++) {
+        double fitness = funcao_objetivo(formigas, k, tamanho_sarrafo);
+        float delta = Q * (float)fitness;
+
+        NoLista* atual = formigas[k].ultima_formiga;
+
+        while (atual != NULL && atual->ant != NULL) {
+            int corte_j = atual->dado;
+            int corte_i = atual->ant->dado;
+
+// Ignora transições que cruzam a divisão entre sarrafos (-1)
+            if (corte_i != DELIMITADOR_FIM_SARRAFO && corte_j != DELIMITADOR_FIM_SARRAFO) {
+                int idx_i = buscar_indice_corte(cortes, qnt_cortes, corte_i);
+                int idx_j = buscar_indice_corte(cortes, qnt_cortes, corte_j);
+
+                if (idx_i != -1 && idx_j != -1) {
+                    feromonios[idx_j + (idx_i * qnt_cortes)] += delta;
+                }
+            }
+
+            atual = atual->ant;
+        }
+    }
+}
+
+
 
 void probabilidade_transicao(float* chance_visitar, float* feromonios, const float peso_feromonio, const float* matriz_cortes, const float peso_heuristica, int qnt_cortes) {
 	float soma = 0.0f;
@@ -195,68 +247,67 @@ double funcao_objetivo(Formiga* formiga, int idx, int tamanho_sarrafo) {
 	return aproveitamento / qnt_sarrafos;
 }
 
+
 int main(void) {
 	//teste das funções
 
-	// Formiga teste[QNT_FORMIGAS];
-	// init_formigas(&teste, QNT_FORMIGAS);
-	// int tamanho = 5;
-	// push_formiga(teste, 1, &tamanho, 5, 0);
-	// push_formiga(teste, 2, &tamanho, 5, 0);
-	// push_formiga(teste, 3, &tamanho, 5, 0);
-	// print_sarrafos(teste, QNT_FORMIGAS, 0);
+	Formiga teste[QNT_FORMIGAS];
+	init_formigas(&teste, QNT_FORMIGAS);
+	int tamanho = 5;
+	push_formiga(teste, 1, &tamanho, 5, 0);
+	push_formiga(teste, 2, &tamanho, 5, 0);
+	push_formiga(teste, 3, &tamanho, 5, 0);
+	print_sarrafos(teste, QNT_FORMIGAS, 0);
 
 
-	// int tam_sarrafos;
-	// printf("Insira o tamanho dos sarrafos (cm): ");
-	// scanf("%d", &tam_sarrafos);
+	int tam_sarrafos;
+	printf("Insira o tamanho dos sarrafos (cm): ");
+	scanf("%d", &tam_sarrafos);
 
-	// Corte* cortes;
+	Corte* cortes;
 
-	// int qnt_cortes;
-	// printf("Insira a quantidade de cortes: ");
-	// scanf("%d", &qnt_cortes);
+	int qnt_cortes;
+	printf("Insira a quantidade de cortes: ");
+	scanf("%d", &qnt_cortes);
 
-	// cortes = malloc(qnt_cortes * sizeof(*cortes));
-	// if (!cortes) {
-	// 	puts("Problema na alocacao de memoria para armazenar os cortes");
-	// 	return 1;
-	// }
+	cortes = malloc(qnt_cortes * sizeof(*cortes));
+	if (!cortes) {
+		puts("Problema na alocacao de memoria para armazenar os cortes");
+		return 1;
+	}
 
-	// puts("Insira o tamanho do corte (cm) e a quantidade separado por um espaco");
-	// for (int i = 0; i < qnt_cortes; ++i) {
-	// 	scanf("%d %d", &cortes[i].tamanho, &cortes[i].quantidade);
-	// }
+	puts("Insira o tamanho do corte (cm) e a quantidade separado por um espaco");
+	for (int i = 0; i < qnt_cortes; ++i) {
+		scanf("%d %d", &cortes[i].tamanho, &cortes[i].quantidade);
+	}
 
-	// int qnt_cortes = 3;
-	// Corte cortes[3] = { { 3, 10 },{ 4, 20 },{ 5, 30 } };
-	// Formiga formigas[QNT_FORMIGAS];
-	// init_formigas(formigas, QNT_FORMIGAS);
-	// const float peso_heuristica = 0.5f;
-	// const float peso_feromonio = 0.5f;
-	// const float feromonio_por_formiga = 1.0f;
-	// const float taxa_evaporacao = 0.1f;
+	int qnt_cortes = 3;
+	Corte cortes[3] = { { 3, 10 },{ 4, 20 },{ 5, 30 } };
+	Formiga formigas[QNT_FORMIGAS];
+	init_formigas(formigas, QNT_FORMIGAS);
+	const float peso_heuristica = 0.5f;
+	const float peso_feromonio = 0.5f;
+	const float feromonio_por_formiga = 1.0f;
+	const float taxa_evaporacao = 0.1f;
 
-	// int* matriz_cortes = malloc(qnt_cortes * qnt_cortes * sizeof(*matriz_cortes));
-	// if (!matriz_cortes) {
-	// 	puts("Problema na alocacao de memoria para a matriz de cortes");
-	// 	return 1;
-	// }
+	int* matriz_cortes = malloc(qnt_cortes * qnt_cortes * sizeof(*matriz_cortes));
+	if (!matriz_cortes) {
+		puts("Problema na alocacao de memoria para a matriz de cortes");
+		return 1;
+	}
 
-	// init_matriz_cortes(matriz_cortes, qnt_cortes, cortes);
+	init_matriz_cortes(matriz_cortes, qnt_cortes, cortes);
 
-	// float* feromonios = malloc(qnt_cortes * qnt_cortes * sizeof(*feromonios));
-	// if (!feromonios) {
-	// 	puts("Problema na alocacao de memoria para matriz de feromonios");
-	// 	free(matriz_cortes);
-	// 	return 1;
-	// }
+	float* feromonios = malloc(qnt_cortes * qnt_cortes * sizeof(*feromonios));
+	if (!feromonios) {
+		puts("Problema na alocacao de memoria para matriz de feromonios");
+		free(matriz_cortes);
+		return 1;
+	}
 
-	// init_matriz_feromonios(feromonios, qnt_cortes);	
+	init_matriz_feromonios(feromonios, qnt_cortes);	
 
-
-
-	// free(cortes);
+	free(cortes);
 
 	return 0;
 }
